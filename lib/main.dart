@@ -70,107 +70,111 @@ class RectDiagram extends Diagram {
   RectDiagram(
       {required super.position, required super.size, required super.color});
 
-  var padding = 5.0;
+  final double padding = 5.0;
+
   @override
   Widget build(State state) {
     return Positioned(
-      left: position.dx - 2.5,
-      top: position.dy - 2.5,
+      left: position.dx - padding / 2,
+      top: position.dy - padding / 2,
       child: Stack(children: [
-        GestureDetector(
-          onPanUpdate: (DragUpdateDetails details) {
-            state.setState(() {
-              print("Body: " + details.localPosition.toString());
-              position += details.delta;
-            });
-          },
-          child: CustomPaint(
-            size: Size(size.width + (padding / 2) * 3,
-                size.height + (padding / 2) * 3),
-            painter: ReactPainter(
-              color: color,
-              padding: padding,
-            ),
-          ),
-        ),
-        Positioned(
+        MouseRegion(
+            cursor: SystemMouseCursors.move,
+            child: GestureDetector(
+              onPanUpdate: (DragUpdateDetails details) {
+                state.setState(() {
+                  print("Body: " + details.localPosition.toString());
+                  position += details.delta;
+                });
+              },
+              child: CustomPaint(
+                size: Size(size.width + (padding / 2) * 3,
+                    size.height + (padding / 2) * 3),
+                painter: ReactPainter(
+                  color: color,
+                  padding: padding,
+                ),
+              ),
+            )),
+        buildCorner(
             left: 0,
             top: 0,
-            child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onPanUpdate: (DragUpdateDetails details) {
-                    state.setState(() {
-                      print("TopLeft: " + details.localPosition.toString());
-                      size += details.delta;
-                    });
-                  },
-                  child: CustomPaint(
-                    size: Size(padding * 2, padding * 2),
-                    painter: ReactConerPainter(
-                      color: color,
-                    ),
-                  ),
-                ))),
-        Positioned(
+            type: "TopLeft",
+            cursor: SystemMouseCursors.resizeUpLeftDownRight,
+            state: state,
+            diagram: this),
+        buildCorner(
             left: size.width - padding,
             top: 0,
-            child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onPanUpdate: (DragUpdateDetails details) {
-                    state.setState(() {
-                      print("TopRight: " + details.localPosition.toString());
-                      size += details.delta;
-                    });
-                  },
-                  child: CustomPaint(
-                    size: Size(padding * 2, padding * 2),
-                    painter: ReactConerPainter(
-                      color: color,
-                    ),
-                  ),
-                ))),
-        Positioned(
+            type: "TopRight",
+            cursor: SystemMouseCursors.resizeUpRightDownLeft,
+            state: state,
+            diagram: this),
+        buildCorner(
             left: 0,
             top: size.height - padding,
-            child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onPanUpdate: (DragUpdateDetails details) {
-                    state.setState(() {
-                      print("BottomLeft: " + details.localPosition.toString());
-                      size += details.delta;
-                    });
-                  },
-                  child: CustomPaint(
-                    size: Size(padding * 2, padding * 2),
-                    painter: ReactConerPainter(
-                      color: color,
-                    ),
-                  ),
-                ))),
-        Positioned(
+            type: "BottomLeft",
+            cursor: SystemMouseCursors.resizeUpRightDownLeft,
+            state: state,
+            diagram: this),
+        buildCorner(
             left: size.width - padding,
             top: size.height - padding,
-            child: MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onPanUpdate: (DragUpdateDetails details) {
-                    state.setState(() {
-                      print("BottomRight: " + details.localPosition.toString());
-                      size += details.delta;
-                    });
-                  },
-                  child: CustomPaint(
-                    size: Size(padding * 2, padding * 2),
-                    painter: ReactConerPainter(
-                      color: color,
-                    ),
-                  ),
-                )))
+            type: "BottomRight",
+            cursor: SystemMouseCursors.resizeUpLeftDownRight,
+            state: state,
+            diagram: this),
       ]),
     );
+  }
+
+  Widget buildCorner({
+    type: String,
+    diagram: RectDiagram,
+    state: State,
+    left: double,
+    top: double,
+    cursor: MouseCursor,
+  }) {
+    return Positioned(
+        left: left,
+        top: top,
+        child: MouseRegion(
+            cursor: cursor,
+            child: GestureDetector(
+              onPanUpdate: (DragUpdateDetails details) {
+                state.setState(() {
+                  print("$type: ${details.delta}");
+
+                  switch (type) {
+                    case 'TopLeft':
+                      diagram.size += details.delta * -1;
+                      diagram.position += details.delta;
+                      break;
+                    case 'TopRight':
+                      diagram.size = Size(diagram.size.width + details.delta.dx,
+                          diagram.size.height - details.delta.dy);
+                      diagram.position = Offset(diagram.position.dx,
+                          diagram.position.dy + details.delta.dy);
+                      break;
+                    case 'BottomLeft':
+                      diagram.size = Size(diagram.size.width - details.delta.dx,
+                          diagram.size.height + details.delta.dy);
+                      diagram.position = Offset(
+                          diagram.position.dx + details.delta.dx,
+                          diagram.position.dy);
+                      break;
+                    case 'BottomRight':
+                      diagram.size += details.delta;
+                      break;
+                  }
+                });
+              },
+              child: CustomPaint(
+                size: Size(diagram.padding * 2, diagram.padding * 2),
+                painter: ReactConerPainter(),
+              ),
+            )));
   }
 }
 
@@ -184,12 +188,13 @@ class ReactPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    var p = 5.0; // padding
+    var p = padding;
 
     final paint = Paint();
     paint.color = color;
     canvas.drawRect(
-        Rect.fromLTWH(p / 2, p / 2, size.width - 7.5, size.height - 7.5),
+        Rect.fromLTWH(
+            p / 2, p / 2, size.width - (p / 2) * 3, size.height - (p / 2) * 3),
         paint);
   }
 
@@ -200,11 +205,6 @@ class ReactPainter extends CustomPainter {
 }
 
 class ReactConerPainter extends CustomPainter {
-  ReactConerPainter({
-    required this.color,
-  });
-  final Color color;
-
   @override
   void paint(Canvas canvas, Size size) {
     var p = size.width / 2;
