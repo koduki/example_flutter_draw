@@ -96,28 +96,28 @@ class RectDiagram extends Diagram {
                 ),
               ),
             )),
-        buildCorner(
+        buildResizePointer(
             left: 0,
             top: 0,
             type: "TopLeft",
             cursor: SystemMouseCursors.resizeUpLeftDownRight,
             state: state,
             diagram: this),
-        buildCorner(
+        buildResizePointer(
             left: size.width - padding,
             top: 0,
             type: "TopRight",
             cursor: SystemMouseCursors.resizeUpRightDownLeft,
             state: state,
             diagram: this),
-        buildCorner(
+        buildResizePointer(
             left: 0,
             top: size.height - padding,
             type: "BottomLeft",
             cursor: SystemMouseCursors.resizeUpRightDownLeft,
             state: state,
             diagram: this),
-        buildCorner(
+        buildResizePointer(
             left: size.width - padding,
             top: size.height - padding,
             type: "BottomRight",
@@ -128,7 +128,7 @@ class RectDiagram extends Diagram {
     );
   }
 
-  Widget buildCorner({
+  Widget buildResizePointer({
     type: String,
     diagram: RectDiagram,
     state: State,
@@ -172,7 +172,7 @@ class RectDiagram extends Diagram {
               },
               child: CustomPaint(
                 size: Size(diagram.padding * 2, diagram.padding * 2),
-                painter: ReactConerPainter(),
+                painter: ReactResizablePainter(),
               ),
             )));
   }
@@ -204,7 +204,7 @@ class ReactPainter extends CustomPainter {
   }
 }
 
-class ReactConerPainter extends CustomPainter {
+class ReactResizablePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     var p = size.width / 2;
