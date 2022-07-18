@@ -32,14 +32,14 @@ class _DrawPageState extends State<DrawPage> {
         color: Colors.yellow.shade200,
         size: const Size(200, 100),
         position: const Offset(10, 10)),
-    RectDiagram(
-        color: Colors.lightBlue.shade200,
-        size: const Size(320, 320),
-        position: const Offset(300, 10)),
-    CircleDiagram(
-        color: Colors.lightGreen.shade200,
-        size: const Size(200, 200),
-        position: const Offset(10, 150)),
+    // RectDiagram(
+    //     color: Colors.lightBlue.shade200,
+    //     size: const Size(320, 320),
+    //     position: const Offset(300, 10)),
+    // CircleDiagram(
+    //     color: Colors.lightGreen.shade200,
+    //     size: const Size(200, 200),
+    //     position: const Offset(10, 150)),
   ];
 
   @override
@@ -70,6 +70,7 @@ class RectDiagram extends Diagram {
   RectDiagram(
       {required super.position, required super.size, required super.color});
 
+  var isReize = false;
   @override
   Widget build(State state) {
     return Positioned(
@@ -78,13 +79,40 @@ class RectDiagram extends Diagram {
       child: GestureDetector(
         onPanUpdate: (DragUpdateDetails details) {
           state.setState(() {
-            print("update: " + position.toString());
+            print("OnpanUpdate: " + details.localPosition.toString());
 
-            position += details.delta;
+            if (isReize) {
+              size += details.delta;
+            } else {
+              position += details.delta;
+            }
           });
         },
+        onTapDown: (TapDownDetails details) {
+          print("OnTap: " + details.localPosition.toString());
+          var x = details.localPosition.dx;
+          var y = details.localPosition.dy;
+          var w = size.width;
+          var h = size.height;
+
+          var p = 5; // padding
+          var isTopLeft = (0 <= x && x <= p && 0 <= y && y <= p);
+          var isTopRight = (w - p <= x && x <= w && 0 <= y && y <= p);
+          var isBottomLeft = (0 <= x && x <= p && h - p <= y && y <= h);
+          var isBottomRight = (w - p <= x && x <= w && h - p <= y && y <= h);
+          if (isTopLeft || isTopRight || isBottomLeft || isBottomRight) {
+            isReize = true;
+            print("isReize: true");
+          }
+        },
+        onPanEnd: (DragEndDetails details) {
+          if (isReize) {
+            isReize = false;
+            print("isReize: false");
+          }
+        },
         child: CustomPaint(
-          size: size,
+          size: Size(size.width + 5.0, size.height + 5.0),
           painter: ReactPainter(
             color: color,
           ),
@@ -98,15 +126,23 @@ class ReactPainter extends CustomPainter {
   ReactPainter({
     required this.color,
   });
-  final Offset offset = const Offset(0, 0);
   final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
+    var p = 5.0; // padding
+
     final paint = Paint();
     paint.color = color;
     canvas.drawRect(
-        Rect.fromLTWH(offset.dx, offset.dy, size.width, size.height), paint);
+        Rect.fromLTWH(p / 2, p / 2, size.width - p / 2, size.height - p / 2),
+        paint);
+
+    paint.color = Colors.blue;
+    canvas.drawCircle(Offset(p / 2, p / 2), p, paint);
+    canvas.drawCircle(Offset(size.width, p), p, paint);
+    canvas.drawCircle(Offset(p, size.height), p, paint);
+    canvas.drawCircle(Offset(size.width, size.height), p, paint);
   }
 
   @override
